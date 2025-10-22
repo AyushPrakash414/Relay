@@ -1,10 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat Room</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SockJS + STOMP libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 </head>
-<body>
-<h1>Relay</h1>
+<body class="bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center h-screen font-[Poppins]">
+
+<div class="bg-slate-700/60 backdrop-blur-lg border border-slate-500/30 rounded-2xl shadow-2xl w-full max-w-md p-6 flex flex-col">
+    <h1 class="text-2xl text-center text-white font-semibold mb-4">💬 Chat Room</h1>
+
+    <!-- Username input -->
+    <div class="mb-4">
+        <input
+                type="text"
+                id="username"
+                placeholder="Enter your name..."
+                class="w-full p-2 rounded-lg border border-slate-500 bg-slate-800 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+    </div>
+
+    <!-- Chat box -->
+    <div
+            id="chat-box"
+            class="flex-1 bg-slate-800 border border-slate-600 rounded-lg p-3 overflow-y-auto text-white space-y-2 mb-4"
+    >
+        <p class="text-slate-400 text-sm text-center">Connecting to chat...</p>
+    </div>
+
+    <!-- Message input and send -->
+    <div class="flex gap-2">
+        <input
+                type="text"
+                id="message"
+                placeholder="Type your message..."
+                class="flex-1 p-2 rounded-lg border border-slate-500 bg-slate-800 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+                id="send-btn"
+                class="bg-blue-600 hover:bg-blue-700 transition-all text-white px-4 rounded-lg font-medium"
+        >
+            Send
+        </button>
+    </div>
+</div>
+
+<script>
+    let stompClient = null;
+
+    // Connect to WebSocket endpoint
+    function connect() {
+      const socket = new SockJS('/chats'); // matches endpoint in Spring config
+      stompClient = Stomp.over(socket);
+
+      stompClient.connect({}, function (frame) {
+        console.log('Connected: ' + frame);
+        const chatBox = document.getElementById("chat-box");
+        chatBox.innerHTML = '<p class="text-green-400 text-sm text-center">Connected! Start chatting...</p>';
+
+        // Subscribe to topic
+        stompClient.subscribe('/topic/messages', function (messageOutput) {
+          const msg = JSON.parse(messageOutput.body);
+          showMessage(msg.sender, msg.content);
+        });
+      });
+    }
+
+    // Send message to server
+    function sendMessage() {
+      const username = document.getElementById("username").value.trim() || "Anonymous";
+      const message = document.getElementById("message").value.trim();
+
+      if (message === "") return;
+
+      stompClient.send("/app/SendMessages", {}, JSON.stringify({
+        sender: username,
+        content: message
+      }));
+
+      document.getElementById("message").value = "";
+    }
+
+    // Display message in chat box
+    function showMessage(sender, content) {
+      const chatBox = document.getElementById("chat-box");
+      const msgElement = document.createElement("div");
+      msgElement.classList.add("bg-blue-600/20", "p-2", "rounded-lg", "animate-fadeIn");
+      msgElement.innerHTML = `<strong>${sender}:</strong> ${content}`;
+      chatBox.appendChild(msgElement);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Button and enter key handlers
+    document.getElementById("send-btn").addEventListener("click", sendMessage);
+    document.getElementById("message").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    // Connect on page load
+    connect();
+</script>
+
+<style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.3s ease-in-out;
+    }
+</style>
+
 </body>
 </html>
