@@ -1,4 +1,4 @@
-package Entity;
+package com.Relay.app.Entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

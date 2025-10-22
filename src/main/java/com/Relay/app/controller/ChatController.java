@@ -1,6 +1,6 @@
-package controller;
+package com.Relay.app.controller;
 
-import Entity.ChatMessage;
+import com.Relay.app.Entity.ChatMessage;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
@@ -16,7 +16,7 @@ public class ChatController {
         return messages;
     }
 
-    @GetMapping("chat")
+    @GetMapping("/chat")
     public String chat()
     {
         return "chat";
